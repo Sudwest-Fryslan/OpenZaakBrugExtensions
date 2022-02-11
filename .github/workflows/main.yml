@@ -11,11 +11,8 @@ on:
       - release-*
 
 jobs:
-  publish_package_to_github_packages:
+  publish_package_to_nexus:
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v2
         with:
@@ -28,8 +25,16 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Publish to Github Packages
+      - uses: s4u/maven-settings-action@v2.4.1
+        if: ${{ github.event_name == 'push'}}
+        with:
+          servers: |
+              [{
+                "id": "openzaakbrugextensions-nexus",
+                "username": "${{ secrets.NEXUS_USERNAME }}",
+                "password": "${{ secrets.NEXUS_PASSWORD }}"
+              }]
+
+      - name: Publish to Nexus
         if: ${{ github.event_name == 'push'}}
         run: mvn --batch-mode deploy --file pom.xml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
