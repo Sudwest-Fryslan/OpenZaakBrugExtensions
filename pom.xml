@@ -6,7 +6,7 @@
 
   <groupId>nl.sudwestfryslan.translations</groupId>
   <artifactId>ozb-extensions</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <name>ozb-extensions</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
