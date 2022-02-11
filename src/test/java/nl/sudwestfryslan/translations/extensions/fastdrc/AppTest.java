@@ -1,4 +1,4 @@
-package nl.haarlem.translations.extensions.fastdrc;
+package nl.sudwestfryslan.translations.extensions.fastdrc;
 
 import static org.junit.Assert.assertTrue;
 

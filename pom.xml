@@ -4,10 +4,10 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>nl.haarlem.translations.extensions</groupId>
-  <artifactId>ozb-extensions-sudwest_fryslan</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>ozb-extensions-sudwest_fryslan</name>
+  <groupId>nl.sudwestfryslan.translations</groupId>
+  <artifactId>ozb-extensions</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>ozb-extensions</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
@@ -27,7 +27,7 @@
     <dependency>
     	<groupId>nl.haarlem.translations</groupId>
     	<artifactId>zds-to-zgw</artifactId>
-    	<version> 1.2.7-SNAPSHOT</version>
+    	<version> 1.2.7</version>
     </dependency>
     <dependency>
 		<groupId>org.projectlombok</groupId>
@@ -44,17 +44,17 @@
 			<url>https://nexus.frankframework.org/content/repositories/public</url>
 		</repository>
 		<repository>
-            <id>github-ozb</id>
-            <name>GitHub Packages OZB</name>
-            <url>https://maven.pkg.github.com/Sudwest-Fryslan/OpenZaakBrug</url>
+            <id>openzaakbrug-nexus</id>
+            <name>OpenZaakbrug Nexus</name>
+            <url>https://nexus.frankframework.org/content/repositories/OpenZaakBrug</url>
         </repository>
   </repositories>
   
   <distributionManagement>
 		<repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/Sudwest-Fryslan/OpenZaakBrugExtensions</url>
+            <id>openzaakbrugextensions-nexus</id>
+            <name>OpenZaakBrug Extensions Nexus</name>
+            <url>https://nexus.frankframework.org/content/repositories/OpenZaakBrugExtensions</url>
         </repository>
 	</distributionManagement>
  
