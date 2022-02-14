@@ -15,9 +15,6 @@
  */
 package nl.sudwestfryslan.translations.extensions.fastdrc;
 
-import static nl.haarlem.translations.zdstozgw.translation.zds.model.namespace.Namespace.STUF;
-import static nl.haarlem.translations.zdstozgw.translation.zds.model.namespace.Namespace.ZKN;
-
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,10 +22,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.List;
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +32,6 @@ import org.springframework.web.server.ResponseStatusException;
 import nl.haarlem.translations.zdstozgw.config.model.Translation;
 import nl.haarlem.translations.zdstozgw.converter.Converter;
 import nl.haarlem.translations.zdstozgw.converter.ConverterException;
-import nl.haarlem.translations.zdstozgw.debug.Debugger;
 import nl.haarlem.translations.zdstozgw.requesthandler.RequestResponseCycle;
 import nl.haarlem.translations.zdstozgw.translation.zds.model.ZdsAntwoordLijstZaakdocument;
 import nl.haarlem.translations.zdstozgw.translation.zds.model.ZdsHeeftRelevant;
@@ -50,10 +42,8 @@ import nl.haarlem.translations.zdstozgw.translation.zds.model.ZdsZaakDocument;
 import nl.haarlem.translations.zdstozgw.translation.zds.model.ZdsZakLa01LijstZaakdocumenten;
 import nl.haarlem.translations.zdstozgw.translation.zds.model.ZdsZakLv01;
 import nl.haarlem.translations.zdstozgw.translation.zds.services.ZaakService;
-import nl.haarlem.translations.zdstozgw.translation.zgw.model.ZgwEnkelvoudigInformatieObject;
 import nl.haarlem.translations.zdstozgw.translation.zgw.model.ZgwInformatieObjectType;
 import nl.haarlem.translations.zdstozgw.translation.zgw.model.ZgwZaak;
-import nl.haarlem.translations.zdstozgw.translation.zgw.model.ZgwZaakInformatieObject;
 import nl.haarlem.translations.zdstozgw.utils.XmlUtils;
 
 public class GeefLijstZaakdocumentenTranslator extends Converter {
@@ -63,10 +53,9 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 	private String datasourcePassword;
 	private String datasourceSql;
 
-	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());	
-	
-	public GeefLijstZaakdocumentenTranslator(RequestResponseCycle context, Translation translation,
-			ZaakService zaakService) {
+	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+	public GeefLijstZaakdocumentenTranslator(RequestResponseCycle context, Translation translation, ZaakService zaakService) {
 		super(context, translation, zaakService);
 
 		datasourceDriverClassName = retrieveParameter("datasource.driverClassName");
@@ -74,15 +63,17 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 		datasourceUsername = retrieveParameter("datasource.username");
 		datasourcePassword = retrieveParameter("datasource.password");
 		datasourceSql = retrieveParameter("datasource.sql");
-		
-		 try {
+
+		try {
 			Class.forName(datasourceDriverClassName);
 		} catch (ClassNotFoundException e) {
 			throw new ConverterException("error loading database driver:" + datasourceDriverClassName, e.getMessage(), e);
 		}
 	}
+
 	public String retrieveParameter(String name) {
-		if(this.translation.getParameterValue(name) == null) throw new ConverterException("required parameter '" + name + "' is not defined"); 	
+		if (this.translation.getParameterValue(name) == null)
+			throw new ConverterException("required parameter '" + name + "' is not defined");
 		return this.translation.getParameterValue(name);
 	}
 
@@ -101,53 +92,19 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 		log.debug("geefLijstZaakdocumenten:" + zaakidentificatie);
 		ZgwZaak zgwZaak = this.getZaakService().zgwClient.getZaakByIdentificatie(zaakidentificatie);
 		var gerelateerdeDocumenten = new ArrayList<ZdsHeeftRelevant>();
-		
+
 		var sql = datasourceSql.replace("${UUID}", zgwZaak.uuid);
+		log.debug("query to be executed: ["+sql+"]");
 		try {
 			Connection conn = DriverManager.getConnection(datasourceUrl, datasourceUsername, datasourcePassword);
 			Statement stmt = conn.createStatement();
-		    ResultSet rs = stmt.executeQuery(datasourceSql);
-			 while (rs.next()) {
-				/*
-				for (ZgwZaakInformatieObject zgwZaakInformatieObject : zgwZaakInformatieObjecten) {
-					ZgwEnkelvoudigInformatieObject zgwEnkelvoudigInformatieObject = this.zgwClient
-							.getZaakDocumentByUrl(zgwZaakInformatieObject.informatieobject);
-					if (zgwEnkelvoudigInformatieObject == null || zgwEnkelvoudigInformatieObject.informatieobjecttype == null) {
-						throw new ConverterException("could not get the zaakdocument: "
-								+ zgwZaakInformatieObject.informatieobject + " for zaak:" + zaakidentificatie);
-					}			
-					ZgwInformatieObjectType documenttype = this.zgwClient
-							.getZgwInformatieObjectTypeByUrl(zgwEnkelvoudigInformatieObject.informatieobjecttype);
-					if (documenttype == null) {
-						throw new ConverterException("getZgwInformatieObjectType #"
-								+ zgwEnkelvoudigInformatieObject.informatieobjecttype + " could not be found");
-					}
-					ZdsZaakDocument zdsZaakDocument = this.modelMapper.map(zgwEnkelvoudigInformatieObject,
-							ZdsZaakDocument.class);
-					zdsZaakDocument.omschrijving = documenttype.omschrijving;
-					ZdsHeeftRelevant heeftRelevant = this.modelMapper.map(zgwZaakInformatieObject, ZdsHeeftRelevant.class);
-					heeftRelevant.gerelateerde = zdsZaakDocument;
-					relevanteDocumenten.add(heeftRelevant);
-		
-				}
-				return relevanteDocumenten;
-		 		*/
+			ResultSet rs = stmt.executeQuery(sql);
 
-			 	// Retrieve by column name
-				// System.out.print("ID: " + rs.getInt("id"));
-				// System.out.print(", Age: " + rs.getInt("age"));
-				// System.out.print(", First: " + rs.getString("first"));
-				// System.out.println(", Last: " + rs.getString("last"));
-					
-				// ZgwEnkelvoudigInformatieObject zgwEnkelvoudigInformatieObject = this.zgwClient.getZaakDocumentByUrl(zgwZaakInformatieObject.informatieobject);
-				// if (zgwEnkelvoudigInformatieObject == null || zgwEnkelvoudigInformatieObject.informatieobjecttype == null) {
-				// 	throw new ConverterException("could not get the zaakdocument: "
-				// 			+ zgwZaakInformatieObject.informatieobject + " for zaak:" + zaakidentificatie);
-				// }			
+			while (rs.next()) {
 
 				var zdsZaakDocument = new ZdsZaakDocument();
 				zdsZaakDocument.identificatie = rs.getString("informatieobjecttype");
-				zdsZaakDocument.omschrijving = rs.getString("omschrijving");				
+				zdsZaakDocument.omschrijving = rs.getString("omschrijving");
 				zdsZaakDocument.creatiedatum = rs.getString("creatiedatum");
 				zdsZaakDocument.ontvangstdatum = rs.getString("ontvangstdatum");
 				zdsZaakDocument.titel = rs.getString("titel");
@@ -163,30 +120,27 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttype);
 				if (documenttype == null) {
 					throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttype + " could not be found");
-				}				
-				zdsZaakDocument.omschrijving = documenttype.omschrijving;	
-				
-				ZdsHeeftRelevant heeftRelevant =  new ZdsHeeftRelevant();
+				}
+				zdsZaakDocument.omschrijving = documenttype.omschrijving;
+
+				ZdsHeeftRelevant heeftRelevant = new ZdsHeeftRelevant();
 				heeftRelevant.titel = rs.getString("titel");
 				heeftRelevant.beschrijving = rs.getString("beschrijving");
 				heeftRelevant.registratiedatum = rs.getString("registratiedatum");
 				heeftRelevant.gerelateerde = zdsZaakDocument;
 				gerelateerdeDocumenten.add(heeftRelevant);
-				 
-			 }
-			 rs.close();
-			 conn.close();
-		}
-		catch(SQLException sqlexception) {
+
+			}
+			rs.close();
+			conn.close();
+		} catch (SQLException sqlexception) {
 			log.warn("could not execute sql:\n" + sql);
-			throw new ConverterException("error while executing direct sqlquery", sqlexception.getMessage()  + "\n" + sql, sqlexception);
+			throw new ConverterException("error while executing direct sqlquery", sqlexception.getMessage() + "\n" + sql, sqlexception);
 		}
 
-		ZdsZakLa01LijstZaakdocumenten zdsZakLa01LijstZaakdocumenten = new ZdsZakLa01LijstZaakdocumenten(
-				zdsZakLv01.stuurgegevens, this.getSession().getReferentienummer());
+		ZdsZakLa01LijstZaakdocumenten zdsZakLa01LijstZaakdocumenten = new ZdsZakLa01LijstZaakdocumenten(zdsZakLv01.stuurgegevens, this.getSession().getReferentienummer());
 		zdsZakLa01LijstZaakdocumenten.antwoord = new ZdsAntwoordLijstZaakdocument();
-		zdsZakLa01LijstZaakdocumenten.stuurgegevens = new ZdsStuurgegevens(zdsZakLv01.stuurgegevens,
-				this.getSession().getReferentienummer());
+		zdsZakLa01LijstZaakdocumenten.stuurgegevens = new ZdsStuurgegevens(zdsZakLv01.stuurgegevens, this.getSession().getReferentienummer());
 		zdsZakLa01LijstZaakdocumenten.stuurgegevens.berichtcode = "La01";
 		zdsZakLa01LijstZaakdocumenten.stuurgegevens.entiteittype = "ZAK";
 		zdsZakLa01LijstZaakdocumenten.parameters = new ZdsParameters(zdsZakLv01.parameters);
