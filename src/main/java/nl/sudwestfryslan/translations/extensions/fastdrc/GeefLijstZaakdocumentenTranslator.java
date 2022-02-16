@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -52,6 +53,12 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 	private String datasourceUsername;
 	private String datasourcePassword;
 	private String datasourceSql;
+	
+	@Value("${openzaak.baseUrl}")
+	private String baseUrl;
+	
+	@Value("${zgw.endpoint.enkelvoudiginformatieobject:/documenten/api/v1/enkelvoudiginformatieobjecten}")
+	private String endpointEnkelvoudiginformatieobject;
 
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -103,8 +110,7 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 			while (rs.next()) {
 
 				var zdsZaakDocument = new ZdsZaakDocument();
-				zdsZaakDocument.identificatie = rs.getString("informatieobjecttype");
-				zdsZaakDocument.omschrijving = rs.getString("omschrijving");
+				zdsZaakDocument.identificatie = rs.getString("identificatie");
 				zdsZaakDocument.creatiedatum = rs.getString("creatiedatum");
 				zdsZaakDocument.ontvangstdatum = rs.getString("ontvangstdatum");
 				zdsZaakDocument.titel = rs.getString("titel");
@@ -115,7 +121,8 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 				zdsZaakDocument.verzenddatum = rs.getString("verzenddatum");
 				zdsZaakDocument.vertrouwelijkAanduiding = rs.getString("vertrouwelijkAanduiding");
 				zdsZaakDocument.auteur = rs.getString("auteur");
-				zdsZaakDocument.link = rs.getString("link");
+				zdsZaakDocument.link = this.baseUrl + this.endpointEnkelvoudiginformatieobject + "/" + rs.getString("link");
+
 				var informatieobjecttype = rs.getString("informatieobjecttype");
 				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttype);
 				if (documenttype == null) {
