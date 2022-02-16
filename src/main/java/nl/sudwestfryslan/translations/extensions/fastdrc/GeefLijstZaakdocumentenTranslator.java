@@ -53,12 +53,15 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 	private String datasourceUsername;
 	private String datasourcePassword;
 	private String datasourceSql;
-	
+
 	@Value("${openzaak.baseUrl}")
 	private String baseUrl;
-	
+
 	@Value("${zgw.endpoint.enkelvoudiginformatieobject:/documenten/api/v1/enkelvoudiginformatieobjecten}")
 	private String endpointEnkelvoudiginformatieobject;
+
+	@Value("${zgw.endpoint.informatieobjecttype:/catalogi/api/v1/informatieobjecttypen}")
+	private String endpointInformatieobjecttype;
 
 	private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -124,9 +127,10 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 				zdsZaakDocument.link = this.baseUrl + this.endpointEnkelvoudiginformatieobject + "/" + rs.getString("link");
 
 				var informatieobjecttype = rs.getString("informatieobjecttype");
-				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttype);
+				var informatieobjecttypeUrl = this.baseUrl + this.endpointInformatieobjecttype + "/" + informatieobjecttype.substring(informatieobjecttype.lastIndexOf("/"), informatieobjecttype.length());
+				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttypeUrl);
 				if (documenttype == null) {
-					throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttype + " could not be found");
+					throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttypeUrl + " could not be found");
 				}
 				zdsZaakDocument.omschrijving = documenttype.omschrijving;
 
