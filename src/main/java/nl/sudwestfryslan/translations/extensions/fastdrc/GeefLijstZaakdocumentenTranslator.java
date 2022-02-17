@@ -124,10 +124,10 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 				zdsZaakDocument.verzenddatum = rs.getString("verzenddatum");
 				zdsZaakDocument.vertrouwelijkAanduiding = rs.getString("vertrouwelijkAanduiding");
 				zdsZaakDocument.auteur = rs.getString("auteur");
-				zdsZaakDocument.link = this.baseUrl + this.endpointEnkelvoudiginformatieobject + "/" + rs.getString("link");
+				zdsZaakDocument.link = this.getZaakService().zgwClient.getBaseUrl() + this.getZaakService().zgwClient.getEndpointEnkelvoudiginformatieobject() + "/" + rs.getString("link");
 
 				var informatieobjecttype = rs.getString("informatieobjecttype");
-				var informatieobjecttypeUrl = this.baseUrl + this.endpointInformatieobjecttype + "/" + informatieobjecttype.substring(informatieobjecttype.lastIndexOf("/"), informatieobjecttype.length());
+				var informatieobjecttypeUrl = this.getZaakService().zgwClient.getBaseUrl() + this.getZaakService().zgwClient.getEndpointInformatieobjecttype() + informatieobjecttype.substring(informatieobjecttype.lastIndexOf("/"), informatieobjecttype.length());
 				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttypeUrl);
 				if (documenttype == null) {
 					throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttypeUrl + " could not be found");
