@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 The Open Zaakbrug Contributors
+ * Copyright 2020-2022 The Open Zaakbrug Contributors
  *
  * Licensed under the EUPL, Version 1.2 or – as soon they will be approved by the 
  * European Commission - subsequent versions of the EUPL (the "Licence");
@@ -21,7 +21,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,35 +113,42 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 			Connection conn = DriverManager.getConnection(datasourceUrl, datasourceUsername, datasourcePassword);
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery(sql);
-
+			Map<String,String> omschrijvenMap = new HashMap<>();
 			while (rs.next()) {
 
 				var zdsZaakDocument = new ZdsZaakDocument();
 				zdsZaakDocument.identificatie = rs.getString("identificatie");
-				zdsZaakDocument.creatiedatum = rs.getString("creatiedatum");
+				zdsZaakDocument.creatiedatum = formatDatum("yyyy-MM-dd'T'HH:mm:ss", rs.getString("creatiedatum"));
 				zdsZaakDocument.ontvangstdatum = rs.getString("ontvangstdatum");
 				zdsZaakDocument.titel = rs.getString("titel");
 				zdsZaakDocument.formaat = rs.getString("formaat");
 				zdsZaakDocument.taal = rs.getString("taal");
 				zdsZaakDocument.versie = rs.getString("versie");
-				zdsZaakDocument.status = rs.getString("status");
+				var status = rs.getString("status");
+				zdsZaakDocument.status = status == null ? "" : status;
 				zdsZaakDocument.verzenddatum = rs.getString("verzenddatum");
-				zdsZaakDocument.vertrouwelijkAanduiding = rs.getString("vertrouwelijkAanduiding");
+				zdsZaakDocument.vertrouwelijkAanduiding = rs.getString("vertrouwelijkAanduiding").toUpperCase();
 				zdsZaakDocument.auteur = rs.getString("auteur");
 				zdsZaakDocument.link = this.getZaakService().zgwClient.getBaseUrl() + this.getZaakService().zgwClient.getEndpointEnkelvoudiginformatieobject() + "/" + rs.getString("link");
 
 				var informatieobjecttype = rs.getString("informatieobjecttype");
-				var informatieobjecttypeUrl = this.getZaakService().zgwClient.getBaseUrl() + this.getZaakService().zgwClient.getEndpointInformatieobjecttype() + informatieobjecttype.substring(informatieobjecttype.lastIndexOf("/"), informatieobjecttype.length());
-				ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttypeUrl);
-				if (documenttype == null) {
-					throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttypeUrl + " could not be found");
+				if(omschrijvenMap.containsKey(informatieobjecttype)) {
+					zdsZaakDocument.omschrijving = omschrijvenMap.get(informatieobjecttype);
+				} else {
+					var informatieobjecttypeUrl = this.getZaakService().zgwClient.getBaseUrl() + this.getZaakService().zgwClient.getEndpointInformatieobjecttype() + informatieobjecttype.substring(informatieobjecttype.lastIndexOf("/"), informatieobjecttype.length());
+					ZgwInformatieObjectType documenttype = this.getZaakService().zgwClient.getZgwInformatieObjectTypeByUrl(informatieobjecttypeUrl);
+					if (documenttype == null) {
+						throw new ConverterException("getZgwInformatieObjectType #" + informatieobjecttypeUrl + " could not be found");
+					}
+					zdsZaakDocument.omschrijving = documenttype.omschrijving;
+					omschrijvenMap.put(informatieobjecttype, documenttype.omschrijving);
 				}
-				zdsZaakDocument.omschrijving = documenttype.omschrijving;
 
 				ZdsHeeftRelevant heeftRelevant = new ZdsHeeftRelevant();
 				heeftRelevant.titel = rs.getString("titel");
-				heeftRelevant.beschrijving = rs.getString("beschrijving");
-				heeftRelevant.registratiedatum = rs.getString("registratiedatum");
+				var beschrijving = rs.getString("beschrijving");
+				heeftRelevant.beschrijving = beschrijving == null ? "" : beschrijving;
+				heeftRelevant.registratiedatum = formatDatum("yyyy-MM-dd HH:mm:ss", rs.getString("registratiedatum"));
 				heeftRelevant.gerelateerde = zdsZaakDocument;
 				gerelateerdeDocumenten.add(heeftRelevant);
 
@@ -161,5 +172,15 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 
 		var response = XmlUtils.getSOAPMessageFromObject(zdsZakLa01LijstZaakdocumenten);
 		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+
+	private String formatDatum(String format, String date) {
+		try {
+			SimpleDateFormat sdf = new SimpleDateFormat(format);
+			return new SimpleDateFormat("yyyyMMdd").format(sdf.parse(date));
+		} catch (ParseException e) {
+			log.error("Failed to format date ["+date+"] to [yyyyMMdd] format");
+		}
+		return date;
 	}
 }
