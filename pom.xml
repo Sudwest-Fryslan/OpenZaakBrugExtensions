@@ -28,7 +28,7 @@
 		<dependency>
 			<groupId>nl.haarlem.translations</groupId>
 			<artifactId>zds-to-zgw</artifactId>
-			<version>1.2.8</version>
+			<version>1.2.11-20220822.083908-5</version>
 		</dependency>
 	</dependencies>
 
