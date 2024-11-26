@@ -7,7 +7,7 @@
 
 	<groupId>nl.sudwestfryslan.translations</groupId>
 	<artifactId>ozb-extensions</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.2-SNAPSHOT</version>
 	<name>ozb-extensions</name>
 	<!-- FIXME change it to the project's website -->
 	<url>http://www.example.com</url>
@@ -28,7 +28,7 @@
 		<dependency>
 			<groupId>nl.haarlem.translations</groupId>
 			<artifactId>zds-to-zgw</artifactId>
-			<version>1.2.11-20220822.083908-5</version>
+			<version>1.2.19</version>
 		</dependency>
 	</dependencies>
 

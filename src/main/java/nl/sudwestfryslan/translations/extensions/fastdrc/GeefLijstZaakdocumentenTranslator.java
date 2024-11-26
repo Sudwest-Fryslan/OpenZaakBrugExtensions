@@ -105,6 +105,9 @@ public class GeefLijstZaakdocumentenTranslator extends Converter {
 		this.getSession().setKenmerk("zaakidentificatie:" + zaakidentificatie);
 		log.debug("geefLijstZaakdocumenten:" + zaakidentificatie);
 		ZgwZaak zgwZaak = this.getZaakService().zgwClient.getZaakByIdentificatie(zaakidentificatie);
+		if(zgwZaak == null) {
+			throw new ConverterException("Zaak not found for identification: '" + zaakidentificatie + "'");
+		}
 		var gerelateerdeDocumenten = new ArrayList<ZdsHeeftRelevant>();
 
 		var sql = datasourceSql.replace("${UUID}", zgwZaak.uuid);
